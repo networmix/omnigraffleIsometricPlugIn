@@ -1,0 +1,22 @@
+{
+  "author": "Andrey Golovanov",
+  "libraries": [
+    {
+      "identifier": "IsometricLib"
+    }
+  ],
+  "identifier": "com.networmix.OmniGraffleIsometricPlugin",
+  "version": "0.5",
+  "description": "A collection of simple OmniGraffle Automation scripts helping to draw isometric diagrams.",
+  "actions": [
+    {
+      "image": "icon.png",
+      "identifier": "skewVertically30Deg"
+    },
+    {
+      "image": "icon.png",
+      "identifier": "skewVertically30DegNeg"
+    }
+  ],
+  "defaultLocale": "en"
+}
