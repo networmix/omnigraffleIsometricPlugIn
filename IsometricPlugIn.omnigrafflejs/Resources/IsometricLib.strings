@@ -4,3 +4,4 @@
 • skewY(points, deg) // applies shear transformation ("skew") along Y-axis
 • scaleX(size, factor) // changes scale along X-axis
 • scaleY(size, factor) // changes scale along Y-axis
+• getAllShapes(graphics) // returns array of all shapes contained in a given graphics

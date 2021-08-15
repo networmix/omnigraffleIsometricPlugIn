@@ -6,9 +6,25 @@
     }
   ],
   "identifier": "com.networmix.OmniGraffleIsometricPlugin",
-  "version": "0.5",
+  "version": "0.6",
   "description": "A collection of simple OmniGraffle Automation scripts helping to draw isometric diagrams.",
   "actions": [
+    {
+      "image": "icon.png",
+      "identifier": "makeLeftPlane"
+    },
+    {
+      "image": "icon.png",
+      "identifier": "makeRightPlane"
+    },
+    {
+      "image": "icon.png",
+      "identifier": "makeTopLeftPlane"
+    },
+    {
+      "image": "icon.png",
+      "identifier": "makeTopRightPlane"
+    },
     {
       "image": "icon.png",
       "identifier": "skewVertically30Deg"

@@ -2,15 +2,19 @@ var _ = function(){
     var action = new PlugIn.Action(function(selection){
         var isometricLib = this.IsometricLib
         shapes = isometricLib.getAllShapes(selection.graphics[0])
-
+        zeroOffset = selection.graphics[0].geometry.minX
         for (let shape of shapes) {
             if (shape.shape !== "Bezier") {
                 shape.shape = "Bezier"
             }
             newGeometry = shape.geometry
-            newGeometry.size = isometricLib.scaleX(newGeometry.size, 2 / Math.sqrt(3))
+            newGeometry.size = isometricLib.scaleX(newGeometry.size, Math.sqrt(3) / 2)
             shape.geometry = newGeometry
+            if (shape.hasOwnProperty("shapeControlPoints")) {
+                shape.shapeControlPoints = isometricLib.skewY(shape.shapeControlPoints, -30, zeroOffset)
+            }
         }
+        selection.graphics[0].rotation = 60
     });
 
     // result determines if the action menu item is enabled
