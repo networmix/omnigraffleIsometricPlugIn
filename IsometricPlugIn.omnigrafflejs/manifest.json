@@ -16,6 +16,22 @@
     {
       "image": "icon.png",
       "identifier": "skewVertically30DegNeg"
+    },
+    {
+      "image": "icon.png",
+      "identifier": "scaleHorizontallyCos30"
+    },
+    {
+      "image": "icon.png",
+      "identifier": "scaleHorizontallyCos30Inv"
+    },
+    {
+      "image": "icon.png",
+      "identifier": "scaleVerticallyCos30"
+    },
+    {
+      "image": "icon.png",
+      "identifier": "scaleVerticallyCos30Inv"
     }
   ],
   "defaultLocale": "en"

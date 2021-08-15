@@ -2,3 +2,5 @@
 // IsometricLib ©2021 Andrey Golovanov
 • skewX(points, deg) // applies shear transformation ("skew") along X-axis
 • skewY(points, deg) // applies shear transformation ("skew") along Y-axis
+• scaleX(size, factor) // changes scale along X-axis
+• scaleY(size, factor) // changes scale along Y-axis
