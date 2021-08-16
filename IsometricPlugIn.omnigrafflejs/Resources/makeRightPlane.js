@@ -1,15 +1,15 @@
 var _ = function(){
     var action = new PlugIn.Action(function(selection){
         var isometricLib = this.IsometricLib
+        newGeometry = selection.graphics[0].geometry
+        newGeometry.size = isometricLib.scaleX(newGeometry.size, Math.sqrt(3) / 2)
+        selection.graphics[0].geometry = newGeometry
         shapes = isometricLib.getAllShapes(selection.graphics[0])
         zeroOffset = selection.graphics[0].geometry.minX
         for (let shape of shapes) {
             if (shape.shape !== "Bezier") {
                 shape.shape = "Bezier"
             }
-            newGeometry = shape.geometry
-            newGeometry.size = isometricLib.scaleX(newGeometry.size, Math.sqrt(3) / 2)
-            shape.geometry = newGeometry
             if (shape.hasOwnProperty("shapeControlPoints")) {
                 shape.shapeControlPoints = isometricLib.skewY(shape.shapeControlPoints, -30, zeroOffset)
             }
