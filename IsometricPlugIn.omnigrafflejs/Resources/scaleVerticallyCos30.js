@@ -1,17 +1,9 @@
 var _ = function(){
     var action = new PlugIn.Action(function(selection){
         var isometricLib = this.IsometricLib
-        shapes = isometricLib.getAllShapes(selection.graphics[0])
-
-        for (let shape of shapes) {
-            if (shape.shape !== "Bezier") {
-                shape.shape = "Bezier"
-            }
-            newGeometry = shape.geometry
-            newGeometry.size = isometricLib.scaleY(newGeometry.size, Math.sqrt(3) / 2)
-            shape.geometry = newGeometry            
-        }
-
+        newGeometry = selection.graphics[0].geometry
+        newGeometry.size = isometricLib.scaleY(newGeometry.size, Math.sqrt(3) / 2)
+        selection.graphics[0].geometry = newGeometry
     });
 
     // result determines if the action menu item is enabled
