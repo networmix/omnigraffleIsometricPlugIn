@@ -1,4 +1,4 @@
-// IsometricLib v0.7 - Andrey Golovanov
+// IsometricLib v0.9 - Andrey Golovanov
 // Access: PlugIn.find("com.networmix.OmniGraffleIsometricPlugin").library("IsometricLib")
 
 == CONSTANTS ==
@@ -17,11 +17,26 @@
 • getAllGraphics(graphic)
     Flatten groups into array of leaf graphics.
 
-• applySkewY(graphic, deg)
-    Vertical skew on graphic. Skips Lines.
+• applySkewY(graphic, deg, [zeroOffset])
+    Vertical skew on graphic. Supports shapes and lines.
 
 • applyScale(graphic, axis, factor)
     Scale bounding box. axis: 'x' or 'y'
 
-• makePlane(graphic, planeType)
+• makePlane(graphic, planeType, [zeroOffset])
     Isometric transform. planeType: 'left', 'right', 'topLeft', 'topRight'
+
+• getSharedMinX(graphics)
+    Compute combined bounding box minX for multiple graphics.
+
+• applySkewYMulti(graphics, deg)
+    Apply skew to multiple graphics with shared zeroOffset.
+
+• makePlaneMulti(graphics, planeType)
+    Transform multiple graphics as a unit.
+
+• duplicateGraphics(canvas, graphics)
+    Duplicate graphics on canvas.
+
+• duplicateAndMakePlane(canvas, graphics, planeType)
+    Duplicate and transform in one step.
