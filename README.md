@@ -1,6 +1,6 @@
 # OmniGraffle Isometric Plugin
 
-An OmniGraffle plugin that transforms 2D shapes into isometric projections.
+An OmniGraffle plugin that transforms 2D shapes and lines into isometric projections.
 
 ## Installation
 
@@ -12,11 +12,17 @@ Alternatively, drag the file into **Automation > Configure... > Plugins**.
 
 ## Usage
 
-Select one or more shapes, then choose an action from **Automation > IsometricPlugin**.
+Select one or more shapes (or lines), then choose an action from **Automation > IsometricPlugin**.
 
-### Plane Actions
+### Main Action
 
-Transform shapes into isometric surfaces (scale by cos(30°), then skew):
+| Action | Description |
+|--------|-------------|
+| **Make Isometric Plane…** | Opens a dialog to choose plane type and options (including non-destructive duplicate mode) |
+
+### Quick Plane Actions
+
+Transform shapes directly into isometric surfaces:
 
 | Action | Description |
 |--------|-------------|
@@ -49,13 +55,17 @@ The plane actions above combine scale + skew. Use these when you need just one s
 ### Notes
 
 - Groups are supported; all shapes within a group are transformed
-- All selected shapes are transformed
-- Shapes are converted to Bezier paths
-- Lines are not transformed (different OmniGraffle API)
+- **Lines are supported** - connectors transform along with shapes
+- Multi-select works correctly; all selected objects share a common reference point
+- Shapes are converted to Bezier paths (irreversible)
 - Text may distort; add labels after transformation
+- **Pre-rotated shapes**: For best results, reset rotation to 0° before transforming
+- **Icons**: Requires macOS 11+ / iOS 14+ for SF Symbol icons
 
 ## Version History
 
+- **0.9** - Added Form-based action with options, SF Symbol icons, simplified menu
+- **0.8** - Added line support, fixed multi-select alignment, added duplicate-then-transform
 - **0.7** - Fixed multi-selection bug, refactored codebase
 - **0.6** - Added group support and makePlane methods
 - **0.5** - Added scale methods

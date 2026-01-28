@@ -6,48 +6,52 @@
     }
   ],
   "identifier": "com.networmix.OmniGraffleIsometricPlugin",
-  "version": "0.7",
-  "description": "Transform 2D shapes into isometric projections.",
+  "version": "0.9",
+  "description": "Transform 2D shapes and lines into isometric projections.",
   "actions": [
     {
-      "image": "icon.png",
-      "identifier": "makeLeftPlane"
+      "identifier": "makeIsometricPlane",
+      "image": "cube.fill"
     },
     {
-      "image": "icon.png",
-      "identifier": "makeRightPlane"
+      "identifier": "makeLeftPlane",
+      "image": "square.lefthalf.filled"
     },
     {
-      "image": "icon.png",
-      "identifier": "makeTopLeftPlane"
+      "identifier": "makeRightPlane",
+      "image": "square.righthalf.filled"
     },
     {
-      "image": "icon.png",
-      "identifier": "makeTopRightPlane"
+      "identifier": "makeTopLeftPlane",
+      "image": "square.tophalf.filled"
     },
     {
-      "image": "icon.png",
-      "identifier": "skewVertically30Deg"
+      "identifier": "makeTopRightPlane",
+      "image": "square.bottomhalf.filled"
     },
     {
-      "image": "icon.png",
-      "identifier": "skewVertically30DegNeg"
+      "identifier": "skewVertically30Deg",
+      "image": "arrow.up.left.and.arrow.down.right"
     },
     {
-      "image": "icon.png",
-      "identifier": "scaleHorizontallyCos30"
+      "identifier": "skewVertically30DegNeg",
+      "image": "arrow.down.left.and.arrow.up.right"
     },
     {
-      "image": "icon.png",
-      "identifier": "scaleHorizontallyCos30Inv"
+      "identifier": "scaleHorizontallyCos30",
+      "image": "arrow.right.to.line"
     },
     {
-      "image": "icon.png",
-      "identifier": "scaleVerticallyCos30"
+      "identifier": "scaleHorizontallyCos30Inv",
+      "image": "arrow.left.to.line"
     },
     {
-      "image": "icon.png",
-      "identifier": "scaleVerticallyCos30Inv"
+      "identifier": "scaleVerticallyCos30",
+      "image": "arrow.down.to.line"
+    },
+    {
+      "identifier": "scaleVerticallyCos30Inv",
+      "image": "arrow.up.to.line"
     }
   ],
   "defaultLocale": "en"
