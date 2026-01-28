@@ -6,8 +6,8 @@
     }
   ],
   "identifier": "com.networmix.OmniGraffleIsometricPlugin",
-  "version": "0.6",
-  "description": "A collection of simple OmniGraffle Automation scripts helping to draw isometric diagrams.",
+  "version": "0.7",
+  "description": "Transform 2D shapes into isometric projections.",
   "actions": [
     {
       "image": "icon.png",

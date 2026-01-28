@@ -1,7 +1,42 @@
+// IsometricLib v0.7 - Andrey Golovanov
+// Access: PlugIn.find("com.networmix.OmniGraffleIsometricPlugin").library("IsometricLib")
 
-// IsometricLib ©2021 Andrey Golovanov
-• skewX(points, deg) // applies shear transformation ("skew") along X-axis
-• skewY(points, deg) // applies shear transformation ("skew") along Y-axis
-• scaleX(size, factor) // changes scale along X-axis
-• scaleY(size, factor) // changes scale along Y-axis
-• getAllShapes(graphics) // returns array of all shapes contained in a given graphics
+== CONSTANTS ==
+
+• COS_30      - cos(30°) ≈ 0.866
+• COS_30_INV  - 1/cos(30°) ≈ 1.155
+
+== FUNCTIONS ==
+
+• skewY(points, deg, zeroOffset)
+    Vertical shear on array of Points.
+
+• scaleX(size, factor) / scaleY(size, factor)
+    Scale Size horizontally/vertically.
+
+• getAllGraphics(graphic)
+    Flatten groups into array of leaf graphics.
+
+• applySkewY(graphic, deg)
+    Vertical skew on graphic. Skips Lines.
+
+• applyScale(graphic, axis, factor)
+    Scale bounding box. axis: 'x' or 'y'
+
+• makePlane(graphic, planeType)
+    Isometric transform. planeType: 'left', 'right', 'topLeft', 'topRight'
+
+• processSelection(selection, fn)
+    Apply fn to each selected graphic.
+
+• createAction(actionFn)
+    Factory for plugin actions with validation.
+
+== USAGE ==
+
+var _ = function() {
+    return this.IsometricLib.createAction(function(graphic, lib) {
+        lib.makePlane(graphic, 'left');
+    });
+}.call(this);
+_;
