@@ -1,4 +1,5 @@
-"label" = "ScaleVertically(Cos30deg)";
-"shortLable" = "ScaleVertically(Cos30deg)";
-"mediumLable" = "ScaleVertically(Cos30deg)";
-"longLabel" = "ScaleVertically(Cos30deg)";
+"label" = "Scale Vertically (cos 30°)";
+"shortLabel" = "Scale Y 86.6%";
+"mediumLabel" = "Scale Vertically cos30";
+"longLabel" = "Scale height to 86.6% - Compress for floor/ceiling planes";
+"paletteLabel" = "Scale Y cos30";

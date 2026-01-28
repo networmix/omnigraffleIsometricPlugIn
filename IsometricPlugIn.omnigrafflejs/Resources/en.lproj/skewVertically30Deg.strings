@@ -1,4 +1,5 @@
-"label" = "SkewVertically(30deg)";
-"shortLable" = "SkewVertically(30deg)";
-"mediumLable" = "SkewVertically(30deg)";
-"longLabel" = "SkewVertically(30deg)";
+"label" = "Skew Vertically (+30°)";
+"shortLabel" = "Skew +30°";
+"mediumLabel" = "Skew Vertically +30°";
+"longLabel" = "Skew +30° - Tilt for left-facing plane (without scaling)";
+"paletteLabel" = "Skew +30°";

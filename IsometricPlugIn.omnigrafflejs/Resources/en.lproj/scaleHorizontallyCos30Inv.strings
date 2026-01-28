@@ -1,4 +1,5 @@
-"label" = "ScaleHorizontally(1/Cos30deg)";
-"shortLable" = "ScaleHorizontally(1/Cos30deg)";
-"mediumLable" = "ScaleHorizontally(1/Cos30deg)";
-"longLabel" = "ScaleHorizontally(1/Cos30deg)";
+"label" = "Scale Horizontally (1/cos 30°)";
+"shortLabel" = "Scale X 115.5%";
+"mediumLabel" = "Scale Horizontally 1/cos30";
+"longLabel" = "Scale width to 115.5% - Undo horizontal compression";
+"paletteLabel" = "Scale X 1/cos30";

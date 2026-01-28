@@ -1,71 +1,110 @@
 var _ = function() {
-    var IsometricLib = new PlugIn.Library(new Version("0.6"));
+    var IsometricLib = new PlugIn.Library(new Version("0.7"));
 
-    IsometricLib.skewX = function(points, deg, zeroOffset=0){
-        newPoints = []
-        for (let p of points) {
-            newPoints.push(new Point(p.x + (p.y - zeroOffset) * Math.tan(deg * Math.PI / 180), p.y))
+    var COS_30 = Math.sqrt(3) / 2;
+    var COS_30_INV = 2 / Math.sqrt(3);
+
+    // Vertical shear transformation on points
+    IsometricLib.skewY = function(points, deg, zeroOffset) {
+        zeroOffset = zeroOffset || 0;
+        var newPoints = [];
+        var tanDeg = Math.tan(deg * Math.PI / 180);
+        for (var i = 0; i < points.length; i++) {
+            var p = points[i];
+            newPoints.push(new Point(p.x, p.y + (p.x - zeroOffset) * tanDeg));
         }
-        return newPoints
-    }
+        return newPoints;
+    };
 
-    IsometricLib.skewY = function(points, deg, zeroOffset=0){
-        newPoints = []
-        for (let p of points) {
-            newPoints.push(new Point(p.x, p.y + (p.x - zeroOffset) * Math.tan(deg * Math.PI / 180)))
-        }
-        return newPoints
-    }
+    IsometricLib.scaleX = function(size, factor) {
+        return new Size(size.width * factor, size.height);
+    };
 
-    IsometricLib.scaleX = function(size, factor){
-        newSize = new Size(size.width * factor, size.height)
-        return newSize
-    }
+    IsometricLib.scaleY = function(size, factor) {
+        return new Size(size.width, size.height * factor);
+    };
 
-    IsometricLib.scaleY = function(size, factor){
-        newSize = new Size(size.width, size.height * factor)
-        return newSize
-    }
-
-    IsometricLib.getAllShapes = function(graphics){
-        shapes = []
-        if (graphics instanceof Group) {
-            queue = [...graphics.graphics]
+    // Recursively extract all non-Group graphics
+    IsometricLib.getAllGraphics = function(graphic) {
+        var result = [];
+        if (graphic instanceof Group) {
+            var queue = [].concat(graphic.graphics);
             while (queue.length) {
-                elt = queue.pop()
+                var elt = queue.pop();
                 if (elt instanceof Group) {
-                    queue.push(...elt.graphics)
+                    queue = queue.concat(elt.graphics);
                 } else {
-                    shapes.push(elt)
+                    result.push(elt);
                 }
             }
         } else {
-            shapes.push(graphics)
+            result.push(graphic);
         }
-        return shapes
-    }
+        return result;
+    };
 
-    // returns a list of functions
-    IsometricLib.handlers = function(){
-        return "\n// IsometricLib ©2021 Andrey Golovanov\n• skewX(points, deg)\n• skewY(points, deg)\n• scaleX(size, factor)\n• scaleY(size, factor)\n• getAllShapes(graphics)"
-    }
+    // Apply vertical skew to all shapes in a graphic (skips Lines)
+    IsometricLib.applySkewY = function(graphic, deg) {
+        var graphics = this.getAllGraphics(graphic);
+        var zeroOffset = graphic.geometry.minX;
+        for (var i = 0; i < graphics.length; i++) {
+            var g = graphics[i];
+            if (typeof g.shape === 'undefined') continue;
+            if (g.shape !== "Bezier") g.shape = "Bezier";
+            if (g.shapeControlPoints) {
+                g.shapeControlPoints = this.skewY(g.shapeControlPoints, deg, zeroOffset);
+            }
+        }
+    };
 
-    // returns contents of matching strings file
-    IsometricLib.documentation = function(){
-        // create a version object
-        var aVersion = new Version("0.6")
-        // look up the plugin
-        var plugin = PlugIn.find("com.networmix.OmniGraffleIsometricPlugin",aVersion)
-        // get the url for the text file inside this plugin
-        var url = plugin.resourceNamed("IsometricLib.strings")
-        // read the file
-        url.fetch(function (data){
-            dataString = data.toString()
-            console.log(dataString) // show in console
-            return dataString
-        })
-    }
-    
+    // Scale graphic's bounding box
+    IsometricLib.applyScale = function(graphic, axis, factor) {
+        var geom = graphic.geometry;
+        geom.size = (axis === 'x')
+            ? this.scaleX(geom.size, factor)
+            : this.scaleY(geom.size, factor);
+        graphic.geometry = geom;
+    };
+
+    // Transform shape into isometric plane
+    IsometricLib.makePlane = function(graphic, planeType) {
+        var skewAngle, rotation = 0;
+        switch (planeType) {
+            case 'left':     skewAngle = 30;  break;
+            case 'right':    skewAngle = -30; break;
+            case 'topLeft':  skewAngle = -30; rotation = 60;  break;
+            case 'topRight': skewAngle = 30;  rotation = -60; break;
+            default: throw new Error("Invalid plane type: " + planeType);
+        }
+        this.applyScale(graphic, 'x', COS_30);
+        this.applySkewY(graphic, skewAngle);
+        if (rotation) graphic.rotation = rotation;
+    };
+
+    // Process all selected graphics
+    IsometricLib.processSelection = function(selection, fn) {
+        for (var i = 0; i < selection.graphics.length; i++) {
+            fn(selection.graphics[i]);
+        }
+    };
+
+    // Create action with validation
+    IsometricLib.createAction = function(actionFn) {
+        var lib = this;
+        var action = new PlugIn.Action(function(selection) {
+            lib.processSelection(selection, function(graphic) {
+                actionFn(graphic, lib);
+            });
+        });
+        action.validate = function(selection) {
+            return selection.graphics.length > 0;
+        };
+        return action;
+    };
+
+    IsometricLib.COS_30 = COS_30;
+    IsometricLib.COS_30_INV = COS_30_INV;
+
     return IsometricLib;
 }();
 _;
