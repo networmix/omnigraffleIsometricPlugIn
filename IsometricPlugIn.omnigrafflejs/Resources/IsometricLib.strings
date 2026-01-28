@@ -25,18 +25,3 @@
 
 • makePlane(graphic, planeType)
     Isometric transform. planeType: 'left', 'right', 'topLeft', 'topRight'
-
-• processSelection(selection, fn)
-    Apply fn to each selected graphic.
-
-• createAction(actionFn)
-    Factory for plugin actions with validation.
-
-== USAGE ==
-
-var _ = function() {
-    return this.IsometricLib.createAction(function(graphic, lib) {
-        lib.makePlane(graphic, 'left');
-    });
-}.call(this);
-_;

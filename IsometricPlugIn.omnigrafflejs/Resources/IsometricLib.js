@@ -81,27 +81,6 @@ var _ = function() {
         if (rotation) graphic.rotation = rotation;
     };
 
-    // Process all selected graphics
-    IsometricLib.processSelection = function(selection, fn) {
-        for (var i = 0; i < selection.graphics.length; i++) {
-            fn(selection.graphics[i]);
-        }
-    };
-
-    // Create action with validation
-    IsometricLib.createAction = function(actionFn) {
-        var lib = this;
-        var action = new PlugIn.Action(function(selection) {
-            lib.processSelection(selection, function(graphic) {
-                actionFn(graphic, lib);
-            });
-        });
-        action.validate = function(selection) {
-            return selection.graphics.length > 0;
-        };
-        return action;
-    };
-
     IsometricLib.COS_30 = COS_30;
     IsometricLib.COS_30_INV = COS_30_INV;
 
