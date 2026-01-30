@@ -1,18 +1,15 @@
 {
   "author": "Andrey Golovanov",
+  "identifier": "com.networmix.OmniGraffleIsometricPlugin",
+  "version": "1.2",
+  "description": "Transform 2D shapes and lines into isometric projections with one click.",
+  "defaultLocale": "en",
   "libraries": [
     {
       "identifier": "IsometricLib"
     }
   ],
-  "identifier": "com.networmix.OmniGraffleIsometricPlugin",
-  "version": "0.9",
-  "description": "Transform 2D shapes and lines into isometric projections.",
   "actions": [
-    {
-      "identifier": "makeIsometricPlane",
-      "image": "cube.fill"
-    },
     {
       "identifier": "makeLeftPlane",
       "image": "square.lefthalf.filled"
@@ -28,31 +25,6 @@
     {
       "identifier": "makeTopRightPlane",
       "image": "square.bottomhalf.filled"
-    },
-    {
-      "identifier": "skewVertically30Deg",
-      "image": "arrow.up.left.and.arrow.down.right"
-    },
-    {
-      "identifier": "skewVertically30DegNeg",
-      "image": "arrow.down.left.and.arrow.up.right"
-    },
-    {
-      "identifier": "scaleHorizontallyCos30",
-      "image": "arrow.right.to.line"
-    },
-    {
-      "identifier": "scaleHorizontallyCos30Inv",
-      "image": "arrow.left.to.line"
-    },
-    {
-      "identifier": "scaleVerticallyCos30",
-      "image": "arrow.down.to.line"
-    },
-    {
-      "identifier": "scaleVerticallyCos30Inv",
-      "image": "arrow.up.to.line"
     }
-  ],
-  "defaultLocale": "en"
+  ]
 }

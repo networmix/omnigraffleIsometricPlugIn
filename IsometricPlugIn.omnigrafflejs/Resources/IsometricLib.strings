@@ -1,42 +1,31 @@
-// IsometricLib v0.9 - Andrey Golovanov
+// IsometricLib v1.2 - Andrey Golovanov
 // Access: PlugIn.find("com.networmix.OmniGraffleIsometricPlugin").library("IsometricLib")
 
 == CONSTANTS ==
 
-• COS_30      - cos(30°) ≈ 0.866
-• COS_30_INV  - 1/cos(30°) ≈ 1.155
+• COS_30       - cos(30°) ≈ 0.866
+• SIN_30       - sin(30°) = 0.5
 
 == FUNCTIONS ==
 
-• skewY(points, deg, zeroOffset)
-    Vertical shear on array of Points.
+• makePlane(graphics, planeType)
+    Transform graphics to isometric plane.
+    Transforms each graphic individually using shared origin for proper undo support.
+    Handles text rotation automatically.
 
-• scaleX(size, factor) / scaleY(size, factor)
-    Scale Size horizontally/vertically.
+    Parameters:
+      - graphics: Array of graphics to transform
+      - planeType: 'left', 'right', 'topLeft', or 'topRight'
 
-• getAllGraphics(graphic)
-    Flatten groups into array of leaf graphics.
+    Transformation approach:
+      - left/right: Scale X by cos(30°), then skew Y by ±30°
+      - topLeft/topRight: Isometric projection matrix (no distortion)
 
-• applySkewY(graphic, deg, [zeroOffset])
-    Vertical skew on graphic. Supports shapes and lines.
+    Text handling:
+      - Rotated but not geometrically transformed (keeps text editable)
+      - left/topLeft: +30°, right/topRight: -30°
 
-• applyScale(graphic, axis, factor)
-    Scale bounding box. axis: 'x' or 'y'
-
-• makePlane(graphic, planeType, [zeroOffset])
-    Isometric transform. planeType: 'left', 'right', 'topLeft', 'topRight'
-
-• getSharedMinX(graphics)
-    Compute combined bounding box minX for multiple graphics.
-
-• applySkewYMulti(graphics, deg)
-    Apply skew to multiple graphics with shared zeroOffset.
-
-• makePlaneMulti(graphics, planeType)
-    Transform multiple graphics as a unit.
-
-• duplicateGraphics(canvas, graphics)
-    Duplicate graphics on canvas.
-
-• duplicateAndMakePlane(canvas, graphics, planeType)
-    Duplicate and transform in one step.
+    Notes:
+      - Shapes are converted to Bezier for point manipulation
+      - Lines are transformed via their points array
+      - Groups are flattened; all leaf graphics share the same origin
