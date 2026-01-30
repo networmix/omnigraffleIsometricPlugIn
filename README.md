@@ -1,75 +1,51 @@
 # OmniGraffle Isometric Plugin
 
-An OmniGraffle plugin that transforms 2D shapes and lines into isometric projections.
+Transform 2D shapes and lines into isometric projections.
 
 ## Installation
 
-1. Download the code as a ZIP archive
-2. Unpack the archive
-3. Double-click `IsometricPlugIn.omnigrafflejs` in Finder to install
-
-Alternatively, drag the file into **Automation > Configure... > Plugins**.
+1. Download `IsometricPlugIn.omnigrafflejs`
+2. Double-click to install, or drag into **Automation > Configure... > Plugins**
 
 ## Usage
 
-Select one or more shapes (or lines), then choose an action from **Automation > IsometricPlugin**.
+Select shapes or lines, then choose from **Automation > IsometricPlugin**:
 
-### Main Action
+| Action | Result |
+|--------|--------|
+| **Make Left Plane** | Left-facing vertical wall |
+| **Make Right Plane** | Right-facing vertical wall |
+| **Make Top-Left Plane** | Horizontal surface, left side closer |
+| **Make Top-Right Plane** | Horizontal surface, right side closer |
 
-| Action | Description |
-|--------|-------------|
-| **Make Isometric Plane…** | Opens a dialog to choose plane type and options (including non-destructive duplicate mode) |
+### Isometric Cube Example
 
-### Quick Plane Actions
+1. Create three identical rectangles
+2. Apply **Make Left Plane** to the first
+3. Apply **Make Right Plane** to the second
+4. Apply **Make Top-Right Plane** to the third
+5. Position to form a cube
 
-Transform shapes directly into isometric surfaces:
+### Technical Details
 
-| Action | Description |
-|--------|-------------|
-| **Make Left Plane** | Left-facing vertical surface (skew +30°) |
-| **Make Right Plane** | Right-facing vertical surface (skew -30°) |
-| **Make Top-Left Plane** | Top surface tilted left (skew -30°, rotate 60°) |
-| **Make Top-Right Plane** | Top surface tilted right (skew +30°, rotate -60°) |
+- Shapes are converted to Bezier paths (allows point manipulation)
+- Text is rotated but not geometrically transformed (trade-off: keeps text editable in OmniGraffle)
+- Groups are flattened; all graphics share a common transformation origin
+- Multi-selection supported; objects transform relative to combined bounding box
+- Undo works correctly (Cmd+Z reverts the entire transformation)
 
-### Individual Operations
+### Transformation Math
 
-The plane actions above combine scale + skew. Use these when you need just one step:
-
-| Action | Use Case |
-|--------|----------|
-| **Skew Vertically (+30°)** | Tilt shape for left plane (without scaling) |
-| **Skew Vertically (-30°)** | Tilt shape for right plane (without scaling) |
-| **Scale Horizontally (cos30)** | Compress width before skewing |
-| **Scale Horizontally (cos30 inv)** | Undo horizontal compression |
-| **Scale Vertically (cos30)** | Compress height (e.g., for floor/ceiling planes) |
-| **Scale Vertically (cos30 inv)** | Undo vertical compression |
-
-### Example: Isometric Cube
-
-1. Create three identical squares
-2. Apply **Make Left Plane** to the first (left face)
-3. Apply **Make Right Plane** to the second (right face)
-4. Apply **Make Top-Right Plane** to the third (top face)
-5. Position the three planes to form a cube
-
-### Notes
-
-- Groups are supported; all shapes within a group are transformed
-- **Lines are supported** - connectors transform along with shapes
-- Multi-select works correctly; all selected objects share a common reference point
-- Shapes are converted to Bezier paths (irreversible)
-- Text may distort; add labels after transformation
-- **Pre-rotated shapes**: For best results, reset rotation to 0° before transforming
-- **Icons**: Requires macOS 11+ / iOS 14+ for SF Symbol icons
+| Plane | Method |
+|-------|--------|
+| Left/Right | Scale X by cos(30°), skew Y by ±30° |
+| TopLeft/TopRight | Isometric projection matrix |
 
 ## Version History
 
-- **0.9** - Added Form-based action with options, SF Symbol icons, simplified menu
-- **0.8** - Added line support, fixed multi-select alignment, added duplicate-then-transform
-- **0.7** - Fixed multi-selection bug, refactored codebase
-- **0.6** - Added group support and makePlane methods
-- **0.5** - Added scale methods
-- **0.4** - Initial release
+- **1.2** - Fixed top plane distortion, fixed text rotation alignment
+- **1.1** - Fixed undo behavior for multi-object transforms
+- **1.0** - Simplified to 4 core plane actions
 
 ## Author
 

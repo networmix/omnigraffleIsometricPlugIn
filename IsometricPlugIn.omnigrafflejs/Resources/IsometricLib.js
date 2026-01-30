@@ -1,136 +1,201 @@
 var _ = function () {
-    var IsometricLib = new PlugIn.Library(new Version("0.9"));
+    var IsometricLib = new PlugIn.Library(new Version("1.2"));
 
-    var COS_30 = Math.sqrt(3) / 2;
-    var COS_30_INV = 2 / Math.sqrt(3);
+    // Constants
+    var COS_30 = Math.sqrt(3) / 2;  // ≈ 0.866
+    var SIN_30 = 0.5;
 
-    // Vertical shear transformation on points
-    IsometricLib.skewY = function (points, deg, zeroOffset) {
-        zeroOffset = zeroOffset || 0;
-        var newPoints = [];
-        var tanDeg = Math.tan(deg * Math.PI / 180);
-        for (var i = 0; i < points.length; i++) {
-            var p = points[i];
-            newPoints.push(new Point(p.x, p.y + (p.x - zeroOffset) * tanDeg));
-        }
-        return newPoints;
-    };
-
-    IsometricLib.scaleX = function (size, factor) {
-        return new Size(size.width * factor, size.height);
-    };
-
-    IsometricLib.scaleY = function (size, factor) {
-        return new Size(size.width, size.height * factor);
-    };
-
-    // Recursively extract all non-Group graphics
-    IsometricLib.getAllGraphics = function (graphic) {
+    // Get all leaf graphics from a list of graphics (flattens nested groups)
+    function getAllLeafGraphics(graphics) {
         var result = [];
-        if (graphic instanceof Group) {
-            var queue = [].concat(graphic.graphics);
-            while (queue.length) {
-                var elt = queue.pop();
-                if (elt instanceof Group) {
-                    queue = queue.concat(elt.graphics);
-                } else {
-                    result.push(elt);
-                }
+        var queue = graphics.slice();
+        while (queue.length) {
+            var g = queue.pop();
+            if (g instanceof Group) {
+                queue = queue.concat(g.graphics);
+            } else {
+                result.push(g);
             }
-        } else {
-            result.push(graphic);
         }
         return result;
-    };
+    }
 
-    // Apply vertical skew to all graphics (shapes and lines)
-    // Optional zeroOffset parameter for multi-select alignment
-    IsometricLib.applySkewY = function (graphic, deg, zeroOffset) {
-        var graphics = this.getAllGraphics(graphic);
-        if (zeroOffset === undefined) {
-            zeroOffset = graphic.geometry.minX;
-        }
+    // Calculate combined bounding box for multiple graphics
+    function getCombinedBounds(graphics) {
+        if (graphics.length === 0) return null;
+
+        var minX = Infinity, minY = Infinity;
+        var maxX = -Infinity, maxY = -Infinity;
+
         for (var i = 0; i < graphics.length; i++) {
-            var g = graphics[i];
-            // Handle Lines
-            if (g instanceof Line) {
-                g.points = this.skewY(g.points, deg, zeroOffset);
-                continue;
+            var geom = graphics[i].geometry;
+            minX = Math.min(minX, geom.minX);
+            minY = Math.min(minY, geom.minY);
+            maxX = Math.max(maxX, geom.maxX);
+            maxY = Math.max(maxY, geom.maxY);
+        }
+
+        return { minX: minX, minY: minY, maxX: maxX, maxY: maxY };
+    }
+
+    // Transform points for LEFT plane (vertical wall facing left)
+    // Scale X by cos(30°), then skew Y by +30°
+    function transformPointsLeft(points, originX) {
+        var result = [];
+        var tanAngle = Math.tan(30 * Math.PI / 180);
+        for (var i = 0; i < points.length; i++) {
+            var p = points[i];
+            var scaledX = originX + (p.x - originX) * COS_30;
+            var skewedY = p.y + (scaledX - originX) * tanAngle;
+            result.push(new Point(scaledX, skewedY));
+        }
+        return result;
+    }
+
+    // Transform points for RIGHT plane (vertical wall facing right)
+    // Scale X by cos(30°), then skew Y by -30°
+    function transformPointsRight(points, originX) {
+        var result = [];
+        var tanAngle = Math.tan(-30 * Math.PI / 180);
+        for (var i = 0; i < points.length; i++) {
+            var p = points[i];
+            var scaledX = originX + (p.x - originX) * COS_30;
+            var skewedY = p.y + (scaledX - originX) * tanAngle;
+            result.push(new Point(scaledX, skewedY));
+        }
+        return result;
+    }
+
+    // Transform points for TOP-LEFT plane (horizontal surface, left side closer)
+    // Uses isometric projection matrix for top view
+    function transformPointsTopLeft(points, originX, originY) {
+        var result = [];
+        for (var i = 0; i < points.length; i++) {
+            var p = points[i];
+            var dx = p.x - originX;
+            var dy = originY - p.y;  // Flip Y so "up" is positive
+
+            // Isometric projection for top face (left-facing)
+            var newX = originX + (dx + dy) * COS_30;
+            var newY = originY - (dy - dx) * SIN_30;
+
+            result.push(new Point(newX, newY));
+        }
+        return result;
+    }
+
+    // Transform points for TOP-RIGHT plane (horizontal surface, right side closer)
+    // Uses isometric projection matrix for top view (mirrored)
+    function transformPointsTopRight(points, originX, originY) {
+        var result = [];
+        for (var i = 0; i < points.length; i++) {
+            var p = points[i];
+            var dx = p.x - originX;
+            var dy = originY - p.y;  // Flip Y so "up" is positive
+
+            // Isometric projection for top face (right-facing) - mirror of topLeft
+            var newX = originX + (dx - dy) * COS_30;
+            var newY = originY - (dy + dx) * SIN_30;
+
+            result.push(new Point(newX, newY));
+        }
+        return result;
+    }
+
+    // Transform a single graphic based on plane type
+    function transformGraphic(graphic, planeType, bounds) {
+        var originX = bounds.minX;
+        var originY = bounds.maxY;  // Bottom of bounding box for top planes
+
+        // Handle text rotation to align with front edge of isometric projection
+        // left: vertical wall, skewed +30°, text +30°
+        // right: vertical wall, skewed -30°, text -30°
+        // topLeft: front edge rises to right at +30°, text +30°
+        // topRight: front edge falls to right at -30°, text -30°
+        if (graphic.text && graphic.text.length > 0) {
+            if (planeType === 'left' || planeType === 'topLeft') {
+                graphic.textRotation = (graphic.textRotation || 0) + 30;
+            } else {
+                graphic.textRotation = (graphic.textRotation || 0) - 30;
             }
-            // Handle Shapes
-            if (typeof g.shape === 'undefined') continue;
-            if (g.shape !== "Bezier") g.shape = "Bezier";
-            if (g.shapeControlPoints) {
-                g.shapeControlPoints = this.skewY(g.shapeControlPoints, deg, zeroOffset);
+        }
+
+        // Handle shapes
+        if (typeof graphic.shape !== 'undefined') {
+            if (graphic.shape !== "Bezier") {
+                graphic.shape = "Bezier";
+            }
+
+            if (graphic.shapeControlPoints) {
+                var points = graphic.shapeControlPoints;
+
+                if (planeType === 'left') {
+                    points = transformPointsLeft(points, originX);
+                } else if (planeType === 'right') {
+                    points = transformPointsRight(points, originX);
+                } else if (planeType === 'topLeft') {
+                    points = transformPointsTopLeft(points, originX, originY);
+                } else if (planeType === 'topRight') {
+                    points = transformPointsTopRight(points, originX, originY);
+                }
+
+                graphic.shapeControlPoints = points;
             }
         }
-    };
 
-    // Scale graphic's bounding box
-    IsometricLib.applyScale = function (graphic, axis, factor) {
-        var geom = graphic.geometry;
-        geom.size = (axis === 'x')
-            ? this.scaleX(geom.size, factor)
-            : this.scaleY(geom.size, factor);
-        graphic.geometry = geom;
-    };
+        // Handle lines
+        if (graphic instanceof Line) {
+            var points = graphic.points;
 
-    // Transform shape into isometric plane
-    // Optional zeroOffset parameter for multi-select alignment
-    IsometricLib.makePlane = function (graphic, planeType, zeroOffset) {
-        var skewAngle, rotation = 0;
-        switch (planeType) {
-            case 'left': skewAngle = 30; break;
-            case 'right': skewAngle = -30; break;
-            case 'topLeft': skewAngle = -30; rotation = 60; break;
-            case 'topRight': skewAngle = 30; rotation = -60; break;
-            default: throw new Error("Invalid plane type: " + planeType);
+            if (planeType === 'left') {
+                points = transformPointsLeft(points, originX);
+            } else if (planeType === 'right') {
+                points = transformPointsRight(points, originX);
+            } else if (planeType === 'topLeft') {
+                points = transformPointsTopLeft(points, originX, originY);
+            } else if (planeType === 'topRight') {
+                points = transformPointsTopRight(points, originX, originY);
+            }
+
+            graphic.points = points;
         }
-        this.applyScale(graphic, 'x', COS_30);
-        this.applySkewY(graphic, skewAngle, zeroOffset);
-        if (rotation) graphic.rotation = graphic.rotation + rotation;
-    };
+    }
 
-    // Compute combined bounding box minX for multiple graphics
-    IsometricLib.getSharedMinX = function (graphics) {
-        var minX = Infinity;
-        for (var i = 0; i < graphics.length; i++) {
-            var gMinX = graphics[i].geometry.minX;
-            if (gMinX < minX) minX = gMinX;
+    /**
+     * Transform graphics to an isometric plane.
+     * Transforms each graphic individually to ensure proper undo behavior.
+     *
+     * @param {Array} graphics - Array of graphics to transform
+     * @param {string} planeType - 'left', 'right', 'topLeft', or 'topRight'
+     */
+    IsometricLib.makePlane = function (graphics, planeType) {
+        if (!graphics || graphics.length === 0) {
+            return;
         }
-        return minX;
-    };
 
-    // Apply skew to multiple graphics as a unit (shared zeroOffset)
-    IsometricLib.applySkewYMulti = function (graphics, deg) {
-        var sharedMinX = this.getSharedMinX(graphics);
-        for (var i = 0; i < graphics.length; i++) {
-            this.applySkewY(graphics[i], deg, sharedMinX);
+        var validTypes = ['left', 'right', 'topLeft', 'topRight'];
+        if (validTypes.indexOf(planeType) === -1) {
+            throw new Error("Invalid plane type: " + planeType);
         }
-    };
 
-    // Transform multiple graphics as a unit (shared zeroOffset)
-    IsometricLib.makePlaneMulti = function (graphics, planeType) {
-        var sharedMinX = this.getSharedMinX(graphics);
-        for (var i = 0; i < graphics.length; i++) {
-            this.makePlane(graphics[i], planeType, sharedMinX);
+        // Get all leaf graphics (flatten any groups in the selection)
+        var leaves = getAllLeafGraphics(graphics);
+        if (leaves.length === 0) {
+            return;
+        }
+
+        // Calculate combined bounding box for all graphics
+        var bounds = getCombinedBounds(leaves);
+
+        // Transform each leaf graphic individually
+        for (var i = 0; i < leaves.length; i++) {
+            transformGraphic(leaves[i], planeType, bounds);
         }
     };
 
-    // Duplicate graphics on canvas and return the duplicates
-    IsometricLib.duplicateGraphics = function (canvas, graphics) {
-        return canvas.duplicate(graphics);
-    };
-
-    // Duplicate and transform multiple graphics
-    IsometricLib.duplicateAndMakePlane = function (canvas, graphics, planeType) {
-        var duplicates = this.duplicateGraphics(canvas, graphics);
-        this.makePlaneMulti(duplicates, planeType);
-        return duplicates;
-    };
-
+    // Export constants for reference
     IsometricLib.COS_30 = COS_30;
-    IsometricLib.COS_30_INV = COS_30_INV;
+    IsometricLib.SIN_30 = SIN_30;
 
     return IsometricLib;
 }();
