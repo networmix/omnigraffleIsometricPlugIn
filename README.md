@@ -41,12 +41,6 @@ Select shapes or lines, then choose from **Automation > IsometricPlugin**:
 | Left/Right | Scale X by cos(30°), skew Y by ±30° |
 | TopLeft/TopRight | Isometric projection matrix |
 
-## Version History
-
-- **1.2** - Fixed top plane distortion, fixed text rotation alignment
-- **1.1** - Fixed undo behavior for multi-object transforms
-- **1.0** - Simplified to 4 core plane actions
-
 ## Author
 
 Andrey Golovanov

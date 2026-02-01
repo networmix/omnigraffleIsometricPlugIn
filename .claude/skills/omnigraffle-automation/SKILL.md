@@ -72,11 +72,68 @@ _;
 **Access from actions**: `var lib = this.MyLibrary;`
 
 **Access externally**:
+
 ```javascript
 var plugin = PlugIn.find("com.example.MyPlugin");
 var lib = plugin.library("MyLibrary");
 lib.myFunction(param);
 ```
+
+### Library Objects Are Frozen
+
+**CRITICAL**: OmniGraffle freezes library objects after loading. You cannot modify properties on them after initialization:
+
+```javascript
+// This will NOT work - library objects are frozen
+MyLibrary._cachedValue = null;
+MyLibrary.getValue = function() {
+    if (!this._cachedValue) {
+        this._cachedValue = expensiveComputation();  // FAILS - object is frozen
+    }
+    return this._cachedValue;
+};
+```
+
+**Verification:**
+
+```javascript
+var lib = plugin.library("MyLibrary");
+Object.isFrozen(lib);      // true
+Object.isSealed(lib);      // true
+Object.isExtensible(lib);  // false
+```
+
+**Implications:**
+
+- Cannot use lazy initialization patterns that cache on `this`
+- Cannot add new properties after plugin loads
+- All properties defined during initialization are read-only afterward
+
+### Cross-Library References
+
+When one library needs to access another library in the same plugin, use `this.plugIn.library()`:
+
+```javascript
+var _ = function() {
+    var MyLibrary = new PlugIn.Library(new Version("1.0"));
+
+    // Access another library (call each time - cannot cache due to freezing)
+    MyLibrary.getCommon = function() {
+        return this.plugIn.library('CommonLib');
+    };
+
+    // Use in methods
+    MyLibrary.doSomething = function() {
+        var common = this.plugIn.library('CommonLib');
+        return common.sharedFunction();
+    };
+
+    return MyLibrary;
+}();
+_;
+```
+
+**Note**: Since library objects are frozen, you must call `this.plugIn.library()` each time rather than caching the result. The overhead is minimal.
 
 ## Action Pattern
 
@@ -140,11 +197,13 @@ var action = new PlugIn.Action(function (selection) {
 ## Localization Strings
 
 **manifest.strings** (in `en.lproj/`):
+
 ```
 "com.example.MyPlugin" = "My Plugin";
 ```
 
 **action.strings** (in `en.lproj/`):
+
 ```
 "label" = "Action Label";
 "shortLabel" = "Short";
@@ -310,6 +369,7 @@ function transformMultiple(graphics, scaleFactor) {
 ```
 
 This approach:
+
 - Preserves relative positions (same visual result as grouping)
 - Works correctly with undo
 - Each graphic is transformed independently using the shared origin
@@ -349,6 +409,7 @@ var newGraphic = graphic.duplicateTo(new Point(x, y), targetCanvas);
 ## Selection Object
 
 The selection parameter in actions provides:
+
 - `selection.graphics` - Array of selected graphics
 - `selection.canvas` - Current canvas
 - `selection.document` - Current document
@@ -361,6 +422,7 @@ Understanding undo is critical for plugin development.
 ### Undo Granularity
 
 Each JavaScript execution context is one atomic undo step:
+
 - All operations in a single `evaluate javascript` call undo together
 - Plugin actions triggered from UI are one undo step
 - Separate AppleScript `evaluate javascript` calls are separate undo steps
@@ -399,16 +461,42 @@ group.ungroup();
 
 ### Testing Undo
 
-Always test undo behavior with multi-object selections:
+**CRITICAL LIMITATION**: `evaluate javascript` via osascript (command line) does **NOT** register undo actions at all. Undo only works for:
+
+- Plugin actions triggered from OmniGraffle's UI (Automation menu)
+- Scripts run from OmniGraffle's built-in automation console
 
 ```javascript
-// Create shapes, transform, then undo
-doc.undo();
+// Via osascript - no undo registered, even in separate calls
+lib.generateTopology(canvas, viewCenter, config);
+// Later:
+document.canUndo;  // false - nothing to undo!
+document.undo();   // Error: "There are no undoable actions."
+```
 
-// Verify restoration
-var isRestored =
-    Math.abs(graphic.geometry.width - originalWidth) < 1 &&
-    Math.abs(graphic.geometry.height - originalHeight) < 1;
+**Why this matters**: Automated tests via shell scripts cannot verify undo behavior. Graphics will be created but won't be undoable via osascript.
+
+**To test undo behavior**:
+
+1. Run the plugin action from OmniGraffle's UI (Automation > Your Plugin > Action)
+2. Press Cmd+Z to verify undo works
+3. Press Cmd+Shift+Z to verify redo works
+
+**What automated tests CAN verify**:
+
+- Correct number of graphics created
+- All graphics created atomically in single call
+- Correct properties/positions of created graphics
+
+```javascript
+// Automated test pattern - verify atomic creation
+var beforeCount = canvas.graphics.length;
+lib.generateTopology(canvas, viewCenter, config);
+var afterCount = canvas.graphics.length;
+
+// Verify expected count
+result.checks.graphicsAdded = (afterCount - beforeCount) === expectedCount;
+// Note: When run from UI, this will be one atomic undo step
 ```
 
 ## Best Practices
@@ -418,12 +506,14 @@ var isRestored =
 3. **Handle Groups**: Use recursive flattening to process all nested graphics
 4. **Use shared reference points**: For multi-select transforms, compute shared minX/minY
 5. **Avoid temporary grouping**: Don't use `new Group()` + `ungroup()` for transforms - it breaks undo
-6. **Test undo behavior**: Always verify multi-object transforms undo correctly
+6. **Test undo behavior**: Verify multi-object transforms undo correctly (manual testing via OmniGraffle UI only)
 7. **Preserve originals**: Offer duplicate-first option for destructive operations
 8. **Localize strings**: Put all user-visible text in `.strings` files
 9. **Test with complex selections**: Groups, lines, shapes, and mixed selections
 10. **Z-order preservation**: `ungroup()` preserves z-order; if shapes appear hidden, check for overlapping fills
 11. **Rotation normalization**: OmniGraffle normalizes rotations (e.g., -60° becomes 300°)
+12. **Library objects are frozen**: Don't try to cache values on library objects - use `this.plugIn.library()` each time for cross-library references
+13. **Cross-library access**: Use `this.plugIn.library('OtherLib')` to access other libraries in the same plugin
 
 ## Automated Testing via AppleScript
 
@@ -445,19 +535,23 @@ end tell
 ```
 
 **Limitations when running via osascript:**
+
 - System Events keystrokes are blocked (`osascript is not allowed to send keystrokes`)
 - Cannot use Cmd+Z/Cmd+C/Cmd+V programmatically from command line
 - Must use OmniGraffle's JavaScript API directly for all operations
-- Undo must be tested manually or via `document.undo()` in JavaScript
+- **Undo does NOT work via osascript** - `evaluate javascript` from command line does not register undo actions at all
+- Undo must be tested manually from OmniGraffle's UI (Automation menu)
 
 ### Plugin Installation Path
 
 Plugins are installed to:
+
 ```
 ~/Library/Containers/com.omnigroup.OmniGraffle7/Data/Library/Application Support/Plug-Ins/
 ```
 
 Install/update a plugin:
+
 ```bash
 cp -R MyPlugin.omnigrafflejs "$HOME/Library/Containers/com.omnigroup.OmniGraffle7/Data/Library/Application Support/Plug-Ins/"
 ```
@@ -523,6 +617,7 @@ testCanvas.remove();
 **Note on Layer.addShape():** The second argument (Rect) is required, unlike Canvas.addShape() which can take just a shape name.
 
 **Note on portfolio.canvases:** This property is read-only. You cannot assign it to a variable in a for loop initializer. Use index access:
+
 ```javascript
 // WRONG: var canvases = portfolio.canvases; for (var c in canvases)...
 // RIGHT:
@@ -534,6 +629,7 @@ for (var i = 0; i < portfolio.canvases.length; i++) {
 ### Exporting Canvases for Visual Verification
 
 **Switching canvases via AppleScript:**
+
 ```applescript
 tell application "OmniGraffle"
     set doc to document 1
@@ -544,6 +640,7 @@ end tell
 ```
 
 **Exporting current canvas to PNG:**
+
 ```applescript
 tell application "OmniGraffle"
     set doc to document 1
@@ -559,6 +656,7 @@ end tell
 ```
 
 **Export scope options:**
+
 - `scope current canvas` - Export only the current canvas
 - `scope all graphics` - Export all graphics (captures negative coordinates)
 - `scope entire document` - Export the full document
@@ -645,6 +743,6 @@ function getCanvasByName(name) {
 
 ## Documentation Resources
 
-- Main docs: https://omni-automation.com/omnigraffle/
-- API reference: https://omni-automation.com/omnigraffle/OG-API.html
-- Plugin structure: https://omni-automation.com/plugins/
+- Main docs: <https://omni-automation.com/omnigraffle/>
+- API reference: <https://omni-automation.com/omnigraffle/OG-API.html>
+- Plugin structure: <https://omni-automation.com/plugins/>
